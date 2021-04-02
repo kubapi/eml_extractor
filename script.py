@@ -4,6 +4,7 @@ from email.parser import BytesParser
 import glob
 import os
 import re
+import pandas as pd
 
 def get_name(text):
     pattern = r"(?<=Name: )(.*)(?=<b)"
@@ -11,7 +12,7 @@ def get_name(text):
         name = re.search(pattern, text).group(1)
         return name
     except:
-        return ""
+        return 0
 
 def get_email(text):
     pattern = r"(?<=Email: )(.*)(?=\/a>)"
@@ -21,19 +22,23 @@ def get_email(text):
         email = re.search(second_pattern, match).group(1)
         return email
     except:
-        return ""
+        return 0
 
 path = './mails/'
 
 eml_files = glob.glob(path + '*.eml')
+data = []
 for eml_file in eml_files:
     with open(eml_file, 'rb') as fp:
         msg = BytesParser(policy=policy.default).parse(fp)
     text = str(msg.get_body(preferencelist=('html')))
     fp.close()
 
-    # printing findings
-    print(get_name((text)))
-    print(get_email(text))
+    #collecting findings
+    name = get_name(text)
+    email = get_email(text)
+    if name != 0 and email != 0:
+        data.append([name, email])
 
-
+dataframe = pd.DataFrame(data, columns=["Names", "Emails"]).drop_duplicates()
+dataframe.to_csv("data.csv", index=False)
